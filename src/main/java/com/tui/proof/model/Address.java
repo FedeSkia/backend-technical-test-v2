@@ -8,6 +8,7 @@ import javax.persistence.*;
 @Data
 public class Address {
   @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "address_id")
   private int addressId;
   private String street;

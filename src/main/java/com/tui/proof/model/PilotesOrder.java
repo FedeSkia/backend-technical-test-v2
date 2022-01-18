@@ -8,6 +8,7 @@ import javax.persistence.*;
 @Data
 public class PilotesOrder {
   @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "order_id")
   private int orderId;
 
