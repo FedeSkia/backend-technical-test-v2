@@ -1,4 +1,4 @@
-package com.tui.proof.dto;
+package com.tui.proof.dto.request;
 
 import com.tui.proof.validator.TelephoneConstraint;
 import lombok.Data;
@@ -6,7 +6,7 @@ import lombok.Data;
 import javax.validation.constraints.NotEmpty;
 
 @Data
-public class ClientDto {
+public class CreateClientRequest {
 
     @NotEmpty(message = "name is mandatory")
     private String name;
