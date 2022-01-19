@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,13 +28,19 @@ public class GenericExceptionHandler {
         return ResponseEntity.badRequest().body(processFieldErrors(fieldErrors));
     }
 
+    @ExceptionHandler(ClientDoesntExists.class)
+    public ResponseEntity<ErrorDto> handleMethodArgumentNotValid(ClientDoesntExists ex) {
+        log.error(ex);
+        return ResponseEntity.badRequest().body(ErrorDto.builder()
+                .message(Collections.singletonList(ex.getMessage()))
+                .build());
+    }
+
     private ErrorDto processFieldErrors(List<FieldError> fieldErrors) {
         return ErrorDto.builder()
                 .status(BAD_REQUEST)
                 .message(fieldErrors.stream().map(DefaultMessageSourceResolvable::getDefaultMessage).collect(Collectors.toList()))
                 .build();
-
-
     }
 
 }
