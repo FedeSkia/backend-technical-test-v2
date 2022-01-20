@@ -1,9 +1,11 @@
 package com.tui.proof.service;
 
 import com.tui.proof.dto.request.CreateOrderRequest;
+import com.tui.proof.dto.request.UpdateOrderRequest;
 import com.tui.proof.dto.response.PilotesOrderDtoResponse;
 import com.tui.proof.exception.AddressNotFound;
 import com.tui.proof.exception.ClientDoesntExists;
+import com.tui.proof.exception.OrderNotFound;
 import com.tui.proof.model.Address;
 import com.tui.proof.model.Client;
 import com.tui.proof.model.PilotesOrder;
@@ -41,7 +43,7 @@ public class OrderService {
         Address clientAddress = addressRepository.findById(createOrderRequest.getAddressId())
                 .orElseThrow(() -> new AddressNotFound("Cant find address with id " + createOrderRequest.getAddressId()));
 
-        BigDecimal orderTotal = calculateOrderTotal(createOrderRequest);
+        BigDecimal orderTotal = calculateOrderTotal(createOrderRequest.getNumberOfPilotes());
 
         PilotesOrder savedOrder = pilotesOrderRepository.save(PilotesOrder.builder()
                 .pilotes(createOrderRequest.getNumberOfPilotes())
@@ -59,8 +61,28 @@ public class OrderService {
                 .build();
     }
 
-    private BigDecimal calculateOrderTotal(CreateOrderRequest createOrderRequest) {
-        return BigDecimal.valueOf(createOrderRequest.getNumberOfPilotes() * 1.33)
+    public PilotesOrderDtoResponse updateOrder(UpdateOrderRequest updateOrderRequest){
+        Integer orderId = updateOrderRequest.getOrderId();
+        Optional<PilotesOrder> orderOptional = pilotesOrderRepository.findById(orderId);
+        Address address = addressRepository.findById(updateOrderRequest.getAddressId()).orElseThrow(() -> new AddressNotFound("Cant find address for id " + updateOrderRequest.getAddressId()));
+        PilotesOrder pilotesOrder = orderOptional.orElseThrow(() -> new OrderNotFound("Cant find order id " + updateOrderRequest.getOrderId()));
+        pilotesOrder.setPilotes(updateOrderRequest.getNumberOfPilotes());
+        pilotesOrder.setDeliveryAddress(address);
+        pilotesOrder.setOrderTotal(calculateOrderTotal(updateOrderRequest.getNumberOfPilotes()).doubleValue());
+        PilotesOrder updatedOrder = pilotesOrderRepository.save(pilotesOrder);
+
+        return PilotesOrderDtoResponse.builder()
+                .deliveryAddress(updatedOrder.getDeliveryAddress())
+                .client(updatedOrder.getClient())
+                .orderId(updatedOrder.getOrderId())
+                .orderTotal(updatedOrder.getOrderTotal())
+                .pilotes(updatedOrder.getPilotes())
+                .build();
+
+    }
+
+    private BigDecimal calculateOrderTotal(Integer numberOfPilotes) {
+        return BigDecimal.valueOf(numberOfPilotes * 1.33)
                 .setScale(2, RoundingMode.HALF_UP);
     }
 

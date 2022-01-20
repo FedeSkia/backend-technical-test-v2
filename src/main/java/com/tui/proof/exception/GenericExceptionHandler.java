@@ -3,6 +3,7 @@ package com.tui.proof.exception;
 import com.tui.proof.dto.ErrorDto;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -34,6 +35,17 @@ public class GenericExceptionHandler {
         return ResponseEntity.badRequest().body(ErrorDto.builder()
                 .message(Collections.singletonList(ex.getMessage()))
                 .build());
+    }
+
+    @ExceptionHandler(AddressNotFound.class)
+    public ResponseEntity<ErrorDto> handleAddressNotFound(AddressNotFound ex) {
+        log.error(ex);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ErrorDto.builder()
+                        .status(HttpStatus.NOT_FOUND)
+                        .message(Collections.singletonList(ex.getMessage()))
+                        .build());
     }
 
     private ErrorDto processFieldErrors(List<FieldError> fieldErrors) {
