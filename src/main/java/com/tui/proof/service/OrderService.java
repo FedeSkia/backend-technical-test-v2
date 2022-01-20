@@ -2,6 +2,7 @@ package com.tui.proof.service;
 
 import com.tui.proof.dto.request.CreateOrderRequest;
 import com.tui.proof.dto.request.UpdateOrderRequest;
+import com.tui.proof.dto.response.AddressResponse;
 import com.tui.proof.dto.response.PilotesOrderDtoResponse;
 import com.tui.proof.exception.AddressNotFound;
 import com.tui.proof.exception.ClientDoesntExists;
@@ -59,7 +60,7 @@ public class OrderService {
                 .orderId(savedOrder.getOrderId())
                 .client(optionalClient.get())
                 .pilotes(createOrderRequest.getNumberOfPilotes())
-                .deliveryAddress(clientAddress)
+                .deliveryAddress(buildDeliveryAddressResponse(clientAddress))
                 .orderTotal(orderTotal.doubleValue())
                 .build();
     }
@@ -84,13 +85,24 @@ public class OrderService {
         PilotesOrder updatedOrder = pilotesOrderRepository.save(pilotesOrder);
 
         return PilotesOrderDtoResponse.builder()
-                .deliveryAddress(updatedOrder.getDeliveryAddress())
+                .deliveryAddress(buildDeliveryAddressResponse(address))
                 .client(updatedOrder.getClient())
                 .orderId(updatedOrder.getOrderId())
                 .orderTotal(updatedOrder.getOrderTotal())
                 .pilotes(updatedOrder.getPilotes())
                 .build();
 
+    }
+
+    private AddressResponse buildDeliveryAddressResponse(Address clientAddress) {
+        return AddressResponse.builder()
+                .country(clientAddress.getCountry())
+                .postcode(clientAddress.getPostcode())
+                .city(clientAddress.getCity())
+                .addressId(clientAddress.getAddressId())
+                .street(clientAddress.getStreet())
+                .country(clientAddress.getCountry())
+                .build();
     }
 
     private BigDecimal calculateOrderTotal(Integer numberOfPilotes) {

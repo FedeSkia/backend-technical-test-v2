@@ -182,8 +182,8 @@ public class PilotesControllerTest {
 
         PilotesOrderDtoResponse updateResponseBody = updateResponse.getBody();
         assertEquals(clientWhoPlaceOrder.getClientId(), updateResponseBody.getClient().getClientId());
-        assertEquals(address.getAddressId(), updateResponseBody.getDeliveryAddress().getAddressId());
-        assertTrue(updateOrderRequest.getNumberOfPilotes() == updateResponseBody.getPilotes());
+        assertEquals((Integer)address.getAddressId(), updateResponseBody.getDeliveryAddress().getAddressId());
+        assertEquals((int) updateOrderRequest.getNumberOfPilotes(), updateResponseBody.getPilotes());
         assertEquals(13.3, updateResponseBody.getOrderTotal(), 0);
 
     }
@@ -215,14 +215,13 @@ public class PilotesControllerTest {
     private PilotesOrder storeOrderInDb(Client clientWhoPlaceOrder,
                                         Address address,
                                         LocalDateTime placedOn) {
-        PilotesOrder pilotesOrder = pilotesOrderRepository.save(PilotesOrder.builder()
+        return pilotesOrderRepository.save(PilotesOrder.builder()
                 .orderTotal(19.95)
                 .deliveryAddress(address)
                 .client(clientWhoPlaceOrder)
                 .pilotes(15)
                 .placedOn(placedOn)
                 .build());
-        return pilotesOrder;
     }
 
     private Address storeAddressInDb(Client clientWhoPlaceOrder) {
