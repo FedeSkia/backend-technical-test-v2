@@ -48,6 +48,17 @@ public class GenericExceptionHandler {
                         .build());
     }
 
+    @ExceptionHandler(UpdateTooLate.class)
+    public ResponseEntity<ErrorDto> handleAddressNotFound(UpdateTooLate ex) {
+        log.error(ex);
+        return ResponseEntity
+                .status(BAD_REQUEST)
+                .body(ErrorDto.builder()
+                        .status(BAD_REQUEST)
+                        .message(Collections.singletonList(ex.getMessage()))
+                        .build());
+    }
+
     private ErrorDto processFieldErrors(List<FieldError> fieldErrors) {
         return ErrorDto.builder()
                 .status(BAD_REQUEST)

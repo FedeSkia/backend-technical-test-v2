@@ -13,6 +13,7 @@ import com.tui.proof.repository.AddressRepository;
 import com.tui.proof.repository.ClientRepository;
 import com.tui.proof.repository.PilotesOrderRepository;
 import com.tui.proof.ws.controller.common.MockRequest;
+import org.apache.tomcat.jni.Local;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,6 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -164,7 +166,7 @@ public class PilotesControllerTest {
     public void updateOrderPerformsUnUpdateAndReturnsUpdatedOrder() {
         Client clientWhoPlaceOrder = storeClientInDb();
         Address address = storeAddressInDb(clientWhoPlaceOrder);
-        PilotesOrder pilotesOrder = storeOrderInDb(clientWhoPlaceOrder, address);
+        PilotesOrder pilotesOrder = storeOrderInDb(clientWhoPlaceOrder, address, LocalDateTime.now());
 
         UpdateOrderRequest updateOrderRequest = new UpdateOrderRequest();
         updateOrderRequest.setOrderId(pilotesOrder.getOrderId());
@@ -186,12 +188,39 @@ public class PilotesControllerTest {
 
     }
 
-    private PilotesOrder storeOrderInDb(Client clientWhoPlaceOrder, Address address) {
+    @Test
+    public void updateOrderCantBePlacedAfter5mins() {
+        Client clientWhoPlaceOrder = storeClientInDb();
+        Address address = storeAddressInDb(clientWhoPlaceOrder);
+        PilotesOrder pilotesOrder = storeOrderInDb(clientWhoPlaceOrder, address, LocalDateTime.now().minusMinutes(5));
+
+        UpdateOrderRequest updateOrderRequest = new UpdateOrderRequest();
+        updateOrderRequest.setOrderId(pilotesOrder.getOrderId());
+        updateOrderRequest.setNumberOfPilotes(10);
+        updateOrderRequest.setAddressId(address.getAddressId());
+
+        HttpEntity<UpdateOrderRequest> requestHttpEntity = new HttpEntity<>(updateOrderRequest);
+
+        ResponseEntity<ErrorDto> updateResponse = restTemplate.exchange("http://localhost:" + port + "/order/update",
+                HttpMethod.PUT,
+                requestHttpEntity,
+                ErrorDto.class);
+
+        ErrorDto updateResponseBody = updateResponse.getBody();
+        assertEquals(updateResponseBody.getStatus(), HttpStatus.BAD_REQUEST);
+        assertTrue(updateResponseBody.getMessage().contains("More than 5 mins have passed since order has been placed"));
+
+    }
+
+    private PilotesOrder storeOrderInDb(Client clientWhoPlaceOrder,
+                                        Address address,
+                                        LocalDateTime placedOn) {
         PilotesOrder pilotesOrder = pilotesOrderRepository.save(PilotesOrder.builder()
                 .orderTotal(19.95)
                 .deliveryAddress(address)
                 .client(clientWhoPlaceOrder)
                 .pilotes(15)
+                .placedOn(placedOn)
                 .build());
         return pilotesOrder;
     }

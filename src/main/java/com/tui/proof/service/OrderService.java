@@ -6,6 +6,7 @@ import com.tui.proof.dto.response.PilotesOrderDtoResponse;
 import com.tui.proof.exception.AddressNotFound;
 import com.tui.proof.exception.ClientDoesntExists;
 import com.tui.proof.exception.OrderNotFound;
+import com.tui.proof.exception.UpdateTooLate;
 import com.tui.proof.model.Address;
 import com.tui.proof.model.Client;
 import com.tui.proof.model.PilotesOrder;
@@ -66,8 +67,17 @@ public class OrderService {
     public PilotesOrderDtoResponse updateOrder(UpdateOrderRequest updateOrderRequest){
         Integer orderId = updateOrderRequest.getOrderId();
         Optional<PilotesOrder> orderOptional = pilotesOrderRepository.findById(orderId);
-        Address address = addressRepository.findById(updateOrderRequest.getAddressId()).orElseThrow(() -> new AddressNotFound("Cant find address for id " + updateOrderRequest.getAddressId()));
-        PilotesOrder pilotesOrder = orderOptional.orElseThrow(() -> new OrderNotFound("Cant find order id " + updateOrderRequest.getOrderId()));
+        Address address = addressRepository
+                .findById(updateOrderRequest.getAddressId())
+                .orElseThrow(() -> new AddressNotFound("Cant find address for id " + updateOrderRequest.getAddressId()));
+        PilotesOrder pilotesOrder = orderOptional
+                .orElseThrow(() -> new OrderNotFound("Cant find order id " + updateOrderRequest.getOrderId()));
+
+        LocalDateTime placedOn = pilotesOrder.getPlacedOn();
+        if(placedOn.isBefore(LocalDateTime.now().minusMinutes(5))){
+            throw new UpdateTooLate("More than 5 mins have passed since order has been placed");
+        }
+
         pilotesOrder.setPilotes(updateOrderRequest.getNumberOfPilotes());
         pilotesOrder.setDeliveryAddress(address);
         pilotesOrder.setOrderTotal(calculateOrderTotal(updateOrderRequest.getNumberOfPilotes()).doubleValue());
