@@ -8,6 +8,7 @@ import com.tui.proof.exception.AddressNotFound;
 import com.tui.proof.exception.ClientDoesntExists;
 import com.tui.proof.exception.OrderNotFound;
 import com.tui.proof.exception.UpdateTooLate;
+import com.tui.proof.mapper.ClientMapper;
 import com.tui.proof.model.Address;
 import com.tui.proof.model.Client;
 import com.tui.proof.model.PilotesOrder;
@@ -27,14 +28,17 @@ public class OrderService {
     private final AddressRepository addressRepository;
     private final ClientRepository clientRepository;
     private final PilotesOrderRepository pilotesOrderRepository;
+    private final ClientMapper clientMapper;
 
 
     public OrderService(AddressRepository addressRepository,
                         ClientRepository clientRepository,
-                        PilotesOrderRepository pilotesOrderRepository) {
+                        PilotesOrderRepository pilotesOrderRepository,
+                        ClientMapper clientMapper) {
         this.addressRepository = addressRepository;
         this.clientRepository = clientRepository;
         this.pilotesOrderRepository = pilotesOrderRepository;
+        this.clientMapper = clientMapper;
     }
 
     public PilotesOrderDtoResponse placeOrder(CreateOrderRequest createOrderRequest){
@@ -58,7 +62,7 @@ public class OrderService {
 
         return PilotesOrderDtoResponse.builder()
                 .orderId(savedOrder.getOrderId())
-                .client(optionalClient.get())
+                .client(clientMapper.toResponse(optionalClient.get(), clientAddress.getAddressId()))
                 .pilotes(createOrderRequest.getNumberOfPilotes())
                 .deliveryAddress(buildDeliveryAddressResponse(clientAddress))
                 .orderTotal(orderTotal.doubleValue())
@@ -86,7 +90,7 @@ public class OrderService {
 
         return PilotesOrderDtoResponse.builder()
                 .deliveryAddress(buildDeliveryAddressResponse(address))
-                .client(updatedOrder.getClient())
+                .client(clientMapper.toResponse(updatedOrder.getClient(), address.getAddressId()))
                 .orderId(updatedOrder.getOrderId())
                 .orderTotal(updatedOrder.getOrderTotal())
                 .pilotes(updatedOrder.getPilotes())

@@ -13,7 +13,7 @@ import java.util.List;
 @Repository
 public interface ClientRepository extends JpaRepository<Client, Integer> {
 
-    Collection<Client> findByFirstNameContainingAndLastNameContainingAndTelephoneContaining(String firstName, String lastName, String telephone);
+    Collection<Client> findByFirstNameContainingOrLastNameContainingOrTelephoneContaining(String firstName, String lastName, String telephone);
 
     @Query("SELECT A FROM Address A WHERE A.client.clientId = ?1")
     List<Address> findAllClientAddresses(Integer clientId);

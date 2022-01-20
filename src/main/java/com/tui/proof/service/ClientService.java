@@ -3,8 +3,10 @@ package com.tui.proof.service;
 import com.tui.proof.dto.request.CreateClientRequest;
 import com.tui.proof.dto.request.SearchRequest;
 import com.tui.proof.dto.response.AddressResponse;
+import com.tui.proof.dto.response.ClientResponse;
 import com.tui.proof.dto.response.PilotesOrderDtoResponse;
 import com.tui.proof.dto.response.SearchResponse;
+import com.tui.proof.mapper.ClientMapper;
 import com.tui.proof.model.Address;
 import com.tui.proof.model.Client;
 import com.tui.proof.model.PilotesOrder;
@@ -20,36 +22,39 @@ import java.util.stream.Collectors;
 public class ClientService {
 
     private final ClientRepository clientRepository;
-
     private final AddressRepository addressRepository;
+    private final ClientMapper clientMapper;
 
-    public ClientService(ClientRepository clientRepository, AddressRepository addressRepository) {
+    public ClientService(ClientRepository clientRepository, AddressRepository addressRepository, ClientMapper clientMapper) {
         this.clientRepository = clientRepository;
         this.addressRepository = addressRepository;
+        this.clientMapper = clientMapper;
     }
 
-    public CreateClientRequest createNewClient(CreateClientRequest createClientRequest) {
-        Client client = Client.builder()
+    public ClientResponse createNewClient(CreateClientRequest createClientRequest) {
+
+        Client savedClient = clientRepository.save(Client.builder()
                 .firstName(createClientRequest.getName())
                 .lastName(createClientRequest.getLastName())
                 .telephone(createClientRequest.getTelephone())
-                .build();
+                .build());
 
-        clientRepository.save(client);
-
-        addressRepository.save(Address.builder()
+        Address address = addressRepository.save(Address.builder()
                 .city(createClientRequest.getCity())
                 .country(createClientRequest.getCountry())
                 .postcode(createClientRequest.getPostcode())
                 .street(createClientRequest.getStreet())
-                .client(client)
+                .client(savedClient)
                 .build());
-        return createClientRequest;
+
+        return clientMapper.toResponse(savedClient, address.getAddressId());
     }
 
     public List<SearchResponse> search(SearchRequest searchRequest) {
 
-        Collection<Client> clientFound = clientRepository.findByFirstNameContainingAndLastNameContainingAndTelephoneContaining(searchRequest.getName(), searchRequest.getLastName(), searchRequest.getTelephone());
+        Collection<Client> clientFound = clientRepository.findByFirstNameContainingOrLastNameContainingOrTelephoneContaining(ifNullReturnEmptyString(searchRequest.getName()),
+                ifNullReturnEmptyString(searchRequest.getLastName()),
+                ifNullReturnEmptyString(searchRequest.getTelephone()));
 
         return clientFound.stream()
                 .map(client -> SearchResponse.builder()
@@ -60,6 +65,10 @@ public class ClientService {
                         .orders(buildOrders(clientRepository.findAllClientOrders(client.getClientId())))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    private String ifNullReturnEmptyString(String string) {
+        return string == null ? "" : string;
     }
 
     private List<AddressResponse> buildAddresses(Integer cliendId) {

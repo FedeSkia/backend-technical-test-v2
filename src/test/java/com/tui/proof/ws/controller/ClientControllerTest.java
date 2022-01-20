@@ -2,6 +2,10 @@ package com.tui.proof.ws.controller;
 
 import com.tui.proof.dto.request.CreateClientRequest;
 import com.tui.proof.dto.ErrorDto;
+import com.tui.proof.dto.request.SearchRequest;
+import com.tui.proof.dto.response.ClientResponse;
+import com.tui.proof.dto.response.SearchResponse;
+import com.tui.proof.model.Address;
 import com.tui.proof.model.Client;
 import com.tui.proof.repository.AddressRepository;
 import com.tui.proof.repository.ClientRepository;
@@ -50,12 +54,15 @@ public class ClientControllerTest {
     public void createCustomerReturnsExpectedBody() {
         CreateClientRequest request = mockRequest.createValidRequest();
 
-        ResponseEntity<CreateClientRequest> clientDtoResponseEntity = restTemplate.postForEntity("http://localhost:" + port + "/client/create", request, CreateClientRequest.class);
+        ResponseEntity<ClientResponse> clientDtoResponseEntity = restTemplate.postForEntity("http://localhost:" + port + "/client/create", request, ClientResponse.class);
         assertEquals(HttpStatus.CREATED, clientDtoResponseEntity.getStatusCode());
-        CreateClientRequest responseBody = clientDtoResponseEntity.getBody();
-        assertEquals(request.getName(), responseBody.getName());
+        ClientResponse responseBody = clientDtoResponseEntity.getBody();
+        assertEquals(request.getName(), responseBody.getFirstName());
         assertEquals(request.getLastName(), responseBody.getLastName());
         assertEquals(request.getTelephone(), responseBody.getTelephone());
+
+        List<Address> all = addressRepository.findAll();
+        assertEquals((Integer) all.get(0).getAddressId(), responseBody.getAddressId());
     }
 
 
@@ -96,6 +103,39 @@ public class ClientControllerTest {
         assertTrue(messages.contains("city must not be empty"));
         assertTrue(messages.contains("country must not be empty"));
 
+    }
+
+    @Test
+    public void searchForClientLastNameReturnsClientWithOrders(){
+        Client client = storeClientInDb();
+        SearchRequest request = new SearchRequest();
+        request.setLastName("last");
+        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.postForEntity("http://localhost:" + port + "/client/search", request, SearchResponse[].class);
+        SearchResponse[] searchResponses = searchResponsesRespentity.getBody();
+
+        assertNotNull(searchResponses);
+        assertEquals(searchResponses[0].getLastName(), client.getLastName());
+
+
+    }
+
+    @Test
+    public void searchForClientLastNameAndFirstNameReturnsClientWithOrders(){
+        Client client = storeClientInDb();
+        SearchRequest request = new SearchRequest();
+        request.setLastName("last");
+        request.setName("name very weird");
+        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.postForEntity("http://localhost:" + port + "/client/search", request, SearchResponse[].class);
+        SearchResponse[] searchResponses = searchResponsesRespentity.getBody();
+
+        assertNotNull(searchResponses);
+        assertEquals(searchResponses[0].getLastName(), client.getLastName());
+    }
+
+    private Client storeClientInDb() {
+        return clientRepository.save(Client.builder()
+                .lastName("lastAndSome Other Char")
+                .build());
     }
 
 }

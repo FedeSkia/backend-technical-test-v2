@@ -1,11 +1,9 @@
 package com.tui.proof.ws.controller;
 
 import com.tui.proof.dto.ErrorDto;
-import com.tui.proof.dto.request.CreateClientRequest;
 import com.tui.proof.dto.request.CreateOrderRequest;
 import com.tui.proof.dto.request.UpdateOrderRequest;
 import com.tui.proof.dto.response.PilotesOrderDtoResponse;
-import com.tui.proof.exception.AddressNotFound;
 import com.tui.proof.model.Address;
 import com.tui.proof.model.Client;
 import com.tui.proof.model.PilotesOrder;
@@ -13,7 +11,6 @@ import com.tui.proof.repository.AddressRepository;
 import com.tui.proof.repository.ClientRepository;
 import com.tui.proof.repository.PilotesOrderRepository;
 import com.tui.proof.ws.controller.common.MockRequest;
-import org.apache.tomcat.jni.Local;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -113,14 +110,6 @@ public class PilotesControllerTest {
 
     }
 
-    private Client storeClientInDb() {
-        return clientRepository.save(Client.builder()
-                .telephone("123")
-                .lastName("lastName")
-                .firstName("firstName")
-                .build());
-    }
-
     @Test
     public void createOrderStoresExpectedOrderInPilotesOrderTable() {
 
@@ -181,7 +170,7 @@ public class PilotesControllerTest {
                 PilotesOrderDtoResponse.class);
 
         PilotesOrderDtoResponse updateResponseBody = updateResponse.getBody();
-        assertEquals(clientWhoPlaceOrder.getClientId(), updateResponseBody.getClient().getClientId());
+        assertEquals((Integer) clientWhoPlaceOrder.getClientId(), updateResponseBody.getClient().getClientId());
         assertEquals((Integer)address.getAddressId(), updateResponseBody.getDeliveryAddress().getAddressId());
         assertEquals((int) updateOrderRequest.getNumberOfPilotes(), updateResponseBody.getPilotes());
         assertEquals(13.3, updateResponseBody.getOrderTotal(), 0);
@@ -207,31 +196,9 @@ public class PilotesControllerTest {
                 ErrorDto.class);
 
         ErrorDto updateResponseBody = updateResponse.getBody();
-        assertEquals(updateResponseBody.getStatus(), HttpStatus.BAD_REQUEST);
+        assertEquals(HttpStatus.BAD_REQUEST, updateResponseBody.getStatus());
         assertTrue(updateResponseBody.getMessage().contains("More than 5 mins have passed since order has been placed"));
 
-    }
-
-    private PilotesOrder storeOrderInDb(Client clientWhoPlaceOrder,
-                                        Address address,
-                                        LocalDateTime placedOn) {
-        return pilotesOrderRepository.save(PilotesOrder.builder()
-                .orderTotal(19.95)
-                .deliveryAddress(address)
-                .client(clientWhoPlaceOrder)
-                .pilotes(15)
-                .placedOn(placedOn)
-                .build());
-    }
-
-    private Address storeAddressInDb(Client clientWhoPlaceOrder) {
-        return addressRepository.save(Address.builder()
-                .client(clientWhoPlaceOrder)
-                .street("street")
-                .postcode("postcode")
-                .country("country")
-                .city("city")
-                .build());
     }
 
     @Test
@@ -260,6 +227,36 @@ public class PilotesControllerTest {
         createOrderRequestRequest.setAddressId(1);
         createOrderRequestRequest.setClientId(1);
         return createOrderRequestRequest;
+    }
+
+    private PilotesOrder storeOrderInDb(Client clientWhoPlaceOrder,
+                                        Address address,
+                                        LocalDateTime placedOn) {
+        return pilotesOrderRepository.save(PilotesOrder.builder()
+                .orderTotal(19.95)
+                .deliveryAddress(address)
+                .client(clientWhoPlaceOrder)
+                .pilotes(15)
+                .placedOn(placedOn)
+                .build());
+    }
+
+    private Client storeClientInDb() {
+        return clientRepository.save(Client.builder()
+                .telephone("123")
+                .lastName("lastName")
+                .firstName("firstName")
+                .build());
+    }
+
+    private Address storeAddressInDb(Client clientWhoPlaceOrder) {
+        return addressRepository.save(Address.builder()
+                .client(clientWhoPlaceOrder)
+                .street("street")
+                .postcode("postcode")
+                .country("country")
+                .city("city")
+                .build());
     }
 
 

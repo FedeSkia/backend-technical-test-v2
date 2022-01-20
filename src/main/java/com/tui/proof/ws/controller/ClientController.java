@@ -2,6 +2,7 @@ package com.tui.proof.ws.controller;
 
 import com.tui.proof.dto.request.CreateClientRequest;
 import com.tui.proof.dto.request.SearchRequest;
+import com.tui.proof.dto.response.ClientResponse;
 import com.tui.proof.dto.response.SearchResponse;
 import com.tui.proof.service.ClientService;
 import io.swagger.annotations.ApiOperation;
@@ -27,7 +28,7 @@ public class ClientController {
 
     @PostMapping("/client/create")
     @ApiOperation(value = "Create a new client with an address", notes = "All fields are mandatory")
-    public ResponseEntity<CreateClientRequest> createCustomer(@Valid @RequestBody CreateClientRequest createClientRequest) {
+    public ResponseEntity<ClientResponse> createCustomer(@Valid @RequestBody CreateClientRequest createClientRequest) {
         return ResponseEntity
                 .created(URI.create("/client/create"))
                 .body(clientService.createNewClient(createClientRequest));

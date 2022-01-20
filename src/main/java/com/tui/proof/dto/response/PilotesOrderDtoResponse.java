@@ -16,7 +16,7 @@ public class PilotesOrderDtoResponse {
 
     private int orderId;
     private AddressResponse deliveryAddress;
-    private Client client;
+    private ClientResponse client;
     private int pilotes;
     private double orderTotal;
 
