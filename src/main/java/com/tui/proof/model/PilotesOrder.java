@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -28,5 +29,8 @@ public class PilotesOrder {
 
   private int pilotes;
   private double orderTotal;
+
+  @Column(name = "placed_on")
+  private LocalDateTime placedOn;
 
 }

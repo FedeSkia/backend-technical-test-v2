@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -50,6 +51,7 @@ public class OrderService {
                 .client(optionalClient.get())
                 .deliveryAddress(clientAddress)
                 .orderTotal(orderTotal.doubleValue())
+                .placedOn(LocalDateTime.now())
                 .build());
 
         return PilotesOrderDtoResponse.builder()
