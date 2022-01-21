@@ -52,9 +52,7 @@ public class ClientService {
 
     public List<SearchResponse> search(SearchRequest searchRequest) {
 
-        Collection<Client> clientFound = clientRepository.findByFirstNameContainingOrLastNameContainingOrTelephoneContaining(ifNullReturnEmptyString(searchRequest.getName()),
-                ifNullReturnEmptyString(searchRequest.getLastName()),
-                ifNullReturnEmptyString(searchRequest.getTelephone()));
+        Collection<Client> clientFound = clientRepository.findByCriteria(searchRequest.getName(), searchRequest.getLastName(), searchRequest.getTelephone());
 
         return clientFound.stream()
                 .map(client -> SearchResponse.builder()
@@ -65,10 +63,6 @@ public class ClientService {
                         .orders(buildOrders(clientRepository.findAllClientOrders(client.getClientId())))
                         .build())
                 .collect(Collectors.toList());
-    }
-
-    private String ifNullReturnEmptyString(String string) {
-        return string == null ? "" : string;
     }
 
     private List<AddressResponse> buildAddresses(Integer cliendId) {

@@ -1,7 +1,7 @@
 package com.tui.proof.ws.controller;
 
-import com.tui.proof.dto.request.CreateClientRequest;
 import com.tui.proof.dto.ErrorDto;
+import com.tui.proof.dto.request.CreateClientRequest;
 import com.tui.proof.dto.request.SearchRequest;
 import com.tui.proof.dto.response.ClientResponse;
 import com.tui.proof.dto.response.SearchResponse;
@@ -22,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -41,10 +42,10 @@ public class ClientControllerTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    private MockRequest mockRequest = new MockRequest();
+    private final MockRequest mockRequest = new MockRequest();
 
     @After
-    public void truncateTables(){
+    public void truncateTables() {
         pilotesOrderRepository.deleteAll();
         addressRepository.deleteAll();
         clientRepository.deleteAll();
@@ -72,7 +73,7 @@ public class ClientControllerTest {
         restTemplate.postForEntity("http://localhost:" + port + "/client/create", validRequest, CreateClientRequest.class);
         List<Client> client = clientRepository.findAll();
         int size = client.size();
-        if( size !=  1){
+        if (size != 1) {
             fail("expect the test databsae to be clean. Clients must be 1");
         }
 
@@ -106,7 +107,7 @@ public class ClientControllerTest {
     }
 
     @Test
-    public void searchForClientLastNameReturnsClientWithOrders(){
+    public void searchForClientLastNameReturnsClientWithOrders() {
         Client client = storeClientInDb();
         SearchRequest request = new SearchRequest();
         request.setLastName("last");
@@ -120,7 +121,7 @@ public class ClientControllerTest {
     }
 
     @Test
-    public void searchForClientLastNameAndFirstNameReturnsClientWithOrders(){
+    public void searchForClientLastNameAndFirstNameReturnsClientWithOrders() {
         Client client = storeClientInDb();
         SearchRequest request = new SearchRequest();
         request.setLastName("last");
@@ -130,6 +131,46 @@ public class ClientControllerTest {
 
         assertNotNull(searchResponses);
         assertEquals(searchResponses[0].getLastName(), client.getLastName());
+    }
+
+    @Test
+    public void searchForClientReturnsEmptyIfItDoesntFind() {
+        storeClientInDb();
+        SearchRequest request = new SearchRequest();
+        request.setLastName("zzz");
+        request.setName("");
+        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.postForEntity("http://localhost:" + port + "/client/search", request, SearchResponse[].class);
+        SearchResponse[] searchResponses = searchResponsesRespentity.getBody();
+        List<SearchResponse> searchResponses1 = Arrays.asList(searchResponses);
+
+        assertEquals(0, searchResponses1.size());
+
+    }
+
+    @Test
+    public void searchForClientReturnsEverythingIfRequestContainsEmptyString() {
+        storeClientInDb();
+        SearchRequest request = new SearchRequest();
+        request.setLastName("");
+        request.setName("");
+        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.postForEntity("http://localhost:" + port + "/client/search", request, SearchResponse[].class);
+        SearchResponse[] searchResponses = searchResponsesRespentity.getBody();
+        List<SearchResponse> searchResponses1 = Arrays.asList(searchResponses);
+
+        assertEquals(1, searchResponses1.size());
+
+    }
+
+    @Test
+    public void searchForClientReturnsEmptyIfRequestContainsNull() {
+        storeClientInDb();
+        SearchRequest request = new SearchRequest();
+        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.postForEntity("http://localhost:" + port + "/client/search", request, SearchResponse[].class);
+        SearchResponse[] searchResponses = searchResponsesRespentity.getBody();
+        List<SearchResponse> searchResponses1 = Arrays.asList(searchResponses);
+
+        assertEquals(0, searchResponses1.size());
+
     }
 
     private Client storeClientInDb() {
