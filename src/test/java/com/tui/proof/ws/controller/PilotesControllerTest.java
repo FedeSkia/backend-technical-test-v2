@@ -24,7 +24,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAmount;
 import java.util.List;
 import java.util.Optional;
 
@@ -181,7 +183,7 @@ public class PilotesControllerTest {
     public void updateOrderCantBePlacedAfter5mins() {
         Client clientWhoPlaceOrder = storeClientInDb();
         Address address = storeAddressInDb(clientWhoPlaceOrder);
-        PilotesOrder pilotesOrder = storeOrderInDb(clientWhoPlaceOrder, address, LocalDateTime.now().minusMinutes(5));
+        PilotesOrder pilotesOrder = storeOrderInDb(clientWhoPlaceOrder, address, LocalDateTime.now().minusMinutes(5).minus(Duration.ofSeconds(1)));
 
         UpdateOrderRequest updateOrderRequest = new UpdateOrderRequest();
         updateOrderRequest.setOrderId(pilotesOrder.getOrderId());
