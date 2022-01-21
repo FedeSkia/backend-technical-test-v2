@@ -1,0 +1,12 @@
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+  backend-technical-test:
+    container_name: backend-technical-test
+    build:
+      context: .
+      dockerfile: dockerfile
+    image: backend-technical-test:latest
+    ports:
+      - 8080:8080
