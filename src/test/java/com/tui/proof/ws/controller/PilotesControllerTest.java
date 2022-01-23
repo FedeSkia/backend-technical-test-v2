@@ -11,8 +11,8 @@ import com.tui.proof.repository.AddressRepository;
 import com.tui.proof.repository.ClientRepository;
 import com.tui.proof.repository.PilotesOrderRepository;
 import com.tui.proof.ws.controller.common.MockRequest;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,17 +22,14 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.TemporalAmount;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.*;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class PilotesControllerTest {
 
@@ -46,9 +43,8 @@ public class PilotesControllerTest {
     private int port;
     @Autowired
     private TestRestTemplate restTemplate;
-    private MockRequest mockRequest = new MockRequest();
 
-    @After
+    @AfterEach
     public void truncateTables() {
         pilotesOrderRepository.deleteAll();
         addressRepository.deleteAll();

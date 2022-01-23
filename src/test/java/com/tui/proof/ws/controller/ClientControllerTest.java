@@ -1,9 +1,13 @@
 package com.tui.proof.ws.controller;
 
 import com.tui.proof.dto.ErrorDto;
+import com.tui.proof.dto.request.AuthenticationRequest;
 import com.tui.proof.dto.request.CreateClientRequest;
+import com.tui.proof.dto.request.CreateOrderRequest;
 import com.tui.proof.dto.request.SearchRequest;
+import com.tui.proof.dto.response.AutenticationResponse;
 import com.tui.proof.dto.response.ClientResponse;
+import com.tui.proof.dto.response.PilotesOrderDtoResponse;
 import com.tui.proof.dto.response.SearchResponse;
 import com.tui.proof.model.Address;
 import com.tui.proof.model.Client;
@@ -11,26 +15,25 @@ import com.tui.proof.repository.AddressRepository;
 import com.tui.proof.repository.ClientRepository;
 import com.tui.proof.repository.PilotesOrderRepository;
 import com.tui.proof.ws.controller.common.MockRequest;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.http.*;
+import org.springframework.util.MultiValueMap;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringRunner.class)
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ClientControllerTest {
 
+    private final MockRequest mockRequest = new MockRequest();
     @Autowired
     ClientRepository clientRepository;
     @Autowired
@@ -42,9 +45,7 @@ public class ClientControllerTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    private final MockRequest mockRequest = new MockRequest();
-
-    @After
+    @AfterEach
     public void truncateTables() {
         pilotesOrderRepository.deleteAll();
         addressRepository.deleteAll();
@@ -111,7 +112,12 @@ public class ClientControllerTest {
         Client client = storeClientInDb();
         SearchRequest request = new SearchRequest();
         request.setLastName("last");
-        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.postForEntity("http://localhost:" + port + "/client/search", request, SearchResponse[].class);
+
+        HttpEntity<SearchRequest> searchRequestHttpEntity = buildAuthenticatedRequest(request);
+        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.exchange("http://localhost:" + port + "/client/search",
+                HttpMethod.POST,
+                searchRequestHttpEntity,
+                SearchResponse[].class);
         SearchResponse[] searchResponses = searchResponsesRespentity.getBody();
 
         assertNotNull(searchResponses);
@@ -123,23 +129,43 @@ public class ClientControllerTest {
     @Test
     public void searchForClientLastNameAndFirstNameReturnsClientWithOrders() {
         Client client = storeClientInDb();
+        Address address = storeAddressInDb(client);
         SearchRequest request = new SearchRequest();
         request.setLastName("last");
-        request.setName("name very weird");
-        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.postForEntity("http://localhost:" + port + "/client/search", request, SearchResponse[].class);
+
+        CreateOrderRequest createOrderRequest = new CreateOrderRequest();
+        createOrderRequest.setClientId(client.getClientId());
+        createOrderRequest.setAddressId(address.getAddressId());
+        createOrderRequest.setNumberOfPilotes(10);
+        HttpEntity<CreateOrderRequest> createOrderRequestHttpEntity = new HttpEntity<>(createOrderRequest);
+        ResponseEntity<PilotesOrderDtoResponse> orderResponseEntity = restTemplate.exchange("http://localhost:" + port + "/order/create",
+                HttpMethod.POST,
+                createOrderRequestHttpEntity,
+                PilotesOrderDtoResponse.class);
+
+        HttpEntity<SearchRequest> searchRequestHttpEntity = buildAuthenticatedRequest(request);
+        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.exchange("http://localhost:" + port + "/client/search",
+                HttpMethod.POST,
+                searchRequestHttpEntity,
+                SearchResponse[].class);
         SearchResponse[] searchResponses = searchResponsesRespentity.getBody();
 
         assertNotNull(searchResponses);
         assertEquals(searchResponses[0].getLastName(), client.getLastName());
+        assertEquals(searchResponses[0].getOrders().get(0).getOrderId() ,orderResponseEntity.getBody().getOrderId());
     }
 
     @Test
     public void searchForClientReturnsEmptyIfItDoesntFind() {
         storeClientInDb();
         SearchRequest request = new SearchRequest();
-        request.setLastName("zzz");
+        request.setLastName("");
         request.setName("");
-        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.postForEntity("http://localhost:" + port + "/client/search", request, SearchResponse[].class);
+        HttpEntity<SearchRequest> searchRequestHttpEntity = buildAuthenticatedRequest(request);
+        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.exchange("http://localhost:" + port + "/client/search",
+                HttpMethod.POST,
+                searchRequestHttpEntity,
+                SearchResponse[].class);
         SearchResponse[] searchResponses = searchResponsesRespentity.getBody();
         List<SearchResponse> searchResponses1 = Arrays.asList(searchResponses);
 
@@ -152,30 +178,57 @@ public class ClientControllerTest {
         storeClientInDb();
         SearchRequest request = new SearchRequest();
         request.setLastName("");
-        request.setName("");
-        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.postForEntity("http://localhost:" + port + "/client/search", request, SearchResponse[].class);
+        HttpEntity<SearchRequest> searchRequestHttpEntity = buildAuthenticatedRequest(request);
+        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.exchange("http://localhost:" + port + "/client/search",
+                HttpMethod.POST,
+                searchRequestHttpEntity,
+                SearchResponse[].class);
         SearchResponse[] searchResponses = searchResponsesRespentity.getBody();
         List<SearchResponse> searchResponses1 = Arrays.asList(searchResponses);
 
-        assertEquals(1, searchResponses1.size());
+        assertEquals(clientRepository.findAll().size(), searchResponses1.size());
 
     }
 
     @Test
-    public void searchForClientReturnsEmptyIfRequestContainsNull() {
+    public void searchForClientReturnsEverythingIfRequestContainsNull() {
         storeClientInDb();
         SearchRequest request = new SearchRequest();
-        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.postForEntity("http://localhost:" + port + "/client/search", request, SearchResponse[].class);
+        HttpEntity<SearchRequest> searchRequestHttpEntity = buildAuthenticatedRequest(request);
+        ResponseEntity<SearchResponse[]> searchResponsesRespentity = restTemplate.exchange("http://localhost:" + port + "/client/search",
+                HttpMethod.POST,
+                searchRequestHttpEntity,
+                SearchResponse[].class);
         SearchResponse[] searchResponses = searchResponsesRespentity.getBody();
         List<SearchResponse> searchResponses1 = Arrays.asList(searchResponses);
 
-        assertEquals(0, searchResponses1.size());
+        assertEquals(clientRepository.findAll().size(), searchResponses1.size());
 
     }
 
     private Client storeClientInDb() {
         return clientRepository.save(Client.builder()
                 .lastName("lastAndSome Other Char")
+                .build());
+    }
+
+    private HttpEntity<SearchRequest> buildAuthenticatedRequest(SearchRequest request) {
+        ResponseEntity<AutenticationResponse> autenticationResponseResponseEntity = restTemplate.postForEntity("http://localhost:" + port + "/authenticate", new AuthenticationRequest("user", "password"), AutenticationResponse.class);
+        String token = autenticationResponseResponseEntity.getBody().getToken();
+
+        MultiValueMap<String, String> headers = new HttpHeaders();
+        headers.add("Authorization", "Bearer " + token);
+        HttpEntity<SearchRequest> searchRequestHttpEntity = new HttpEntity<>(request, headers);
+        return searchRequestHttpEntity;
+    }
+
+    private Address storeAddressInDb(Client clientWhoPlaceOrder) {
+        return addressRepository.save(Address.builder()
+                .client(clientWhoPlaceOrder)
+                .street("street")
+                .postcode("postcode")
+                .country("country")
+                .city("city")
                 .build());
     }
 
