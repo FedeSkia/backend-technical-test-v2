@@ -50,6 +50,9 @@ public class PilotesControllerTest {
     @Value("${price}")
     private Double price;
 
+    @Value("${numberOfPilotes}")
+    private List<Integer> pilotesNumber;
+
     @AfterEach
     public void truncateTables() {
         pilotesOrderRepository.deleteAll();
@@ -98,14 +101,14 @@ public class PilotesControllerTest {
         Address address = storeAddressInDb(clientWhoPlaceOrder);
 
         CreateOrderRequest createOrderRequestRequest = new CreateOrderRequest();
-        createOrderRequestRequest.setNumberOfPilotes(15);
+        createOrderRequestRequest.setNumberOfPilotes(pilotesNumber.get(0));
         createOrderRequestRequest.setClientId(clientWhoPlaceOrder.getClientId());
         createOrderRequestRequest.setAddressId(address.getAddressId());
 
         ResponseEntity<PilotesOrderDtoResponse> createdOrder = restTemplate.postForEntity("http://localhost:" + port + "/order/create", createOrderRequestRequest, PilotesOrderDtoResponse.class);
         assertEquals(HttpStatus.CREATED, createdOrder.getStatusCode());
         PilotesOrderDtoResponse body = createdOrder.getBody();
-        assertEquals(15, body.getPilotes());
+        assertEquals(pilotesNumber.get(0), (Integer) body.getPilotes());
         assertEquals(address.getCity(), body.getDeliveryAddress().getCity());
         assertEquals(address.getCountry(), body.getDeliveryAddress().getCountry());
         assertEquals(address.getPostcode(), body.getDeliveryAddress().getPostcode());
@@ -145,7 +148,7 @@ public class PilotesControllerTest {
         Address address = storeAddressInDb(clientWhoPlaceOrder);
 
         CreateOrderRequest createOrderRequestRequest = new CreateOrderRequest();
-        createOrderRequestRequest.setNumberOfPilotes(15);
+        createOrderRequestRequest.setNumberOfPilotes(pilotesNumber.get(0));
         createOrderRequestRequest.setClientId(clientWhoPlaceOrder.getClientId());
         createOrderRequestRequest.setAddressId(address.getAddressId());
 
@@ -153,7 +156,7 @@ public class PilotesControllerTest {
         int orderId = createdOrder.getBody().getOrderId();
         Optional<PilotesOrder> orderInsertedOptional = pilotesOrderRepository.findById(orderId);
         PilotesOrder orderInserted = orderInsertedOptional.get();
-        assertEquals(15, orderInserted.getPilotes());
+        assertEquals(createOrderRequestRequest.getNumberOfPilotes(), (Integer) orderInserted.getPilotes());
         assertEquals(address.getAddressId(), orderInserted.getDeliveryAddress().getAddressId());
         assertEquals(clientWhoPlaceOrder.getClientId(), orderInserted.getClient().getClientId());
 
@@ -167,7 +170,7 @@ public class PilotesControllerTest {
 
         UpdateOrderRequest updateOrderRequest = new UpdateOrderRequest();
         updateOrderRequest.setOrderId(pilotesOrder.getOrderId());
-        updateOrderRequest.setNumberOfPilotes(10);
+        updateOrderRequest.setNumberOfPilotes(pilotesNumber.get(0));
         updateOrderRequest.setAddressId(address.getAddressId());
 
         HttpEntity<UpdateOrderRequest> requestHttpEntity = new HttpEntity<>(updateOrderRequest);
@@ -197,7 +200,7 @@ public class PilotesControllerTest {
 
         UpdateOrderRequest updateOrderRequest = new UpdateOrderRequest();
         updateOrderRequest.setOrderId(pilotesOrder.getOrderId());
-        updateOrderRequest.setNumberOfPilotes(10);
+        updateOrderRequest.setNumberOfPilotes(pilotesNumber.get(0));
         updateOrderRequest.setAddressId(address.getAddressId());
 
         HttpEntity<UpdateOrderRequest> requestHttpEntity = new HttpEntity<>(updateOrderRequest);
@@ -218,7 +221,7 @@ public class PilotesControllerTest {
 
         UpdateOrderRequest updateOrderRequest = new UpdateOrderRequest();
         updateOrderRequest.setOrderId(1);
-        updateOrderRequest.setNumberOfPilotes(10);
+        updateOrderRequest.setNumberOfPilotes(pilotesNumber.get(0));
         updateOrderRequest.setAddressId(1);
 
         HttpEntity<UpdateOrderRequest> requestHttpEntity = new HttpEntity<>(updateOrderRequest);
@@ -235,7 +238,7 @@ public class PilotesControllerTest {
 
     private CreateOrderRequest createOrderWithNoClient() {
         CreateOrderRequest createOrderRequestRequest = new CreateOrderRequest();
-        createOrderRequestRequest.setNumberOfPilotes(10);
+        createOrderRequestRequest.setNumberOfPilotes(pilotesNumber.get(0));
         createOrderRequestRequest.setAddressId(1);
         createOrderRequestRequest.setClientId(1);
         return createOrderRequestRequest;
