@@ -15,6 +15,7 @@ import com.tui.proof.model.PilotesOrder;
 import com.tui.proof.repository.AddressRepository;
 import com.tui.proof.repository.ClientRepository;
 import com.tui.proof.repository.PilotesOrderRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -29,16 +30,19 @@ public class OrderService {
     private final ClientRepository clientRepository;
     private final PilotesOrderRepository pilotesOrderRepository;
     private final ClientMapper clientMapper;
+    private final Double pilotePrice;
 
 
     public OrderService(AddressRepository addressRepository,
                         ClientRepository clientRepository,
                         PilotesOrderRepository pilotesOrderRepository,
-                        ClientMapper clientMapper) {
+                        ClientMapper clientMapper,
+                        @Value("${price}") Double pilotePrice) {
         this.addressRepository = addressRepository;
         this.clientRepository = clientRepository;
         this.pilotesOrderRepository = pilotesOrderRepository;
         this.clientMapper = clientMapper;
+        this.pilotePrice = pilotePrice;
     }
 
     public PilotesOrderDtoResponse placeOrder(CreateOrderRequest createOrderRequest){
@@ -110,7 +114,7 @@ public class OrderService {
     }
 
     private BigDecimal calculateOrderTotal(Integer numberOfPilotes) {
-        return BigDecimal.valueOf(numberOfPilotes * 1.33)
+        return BigDecimal.valueOf(numberOfPilotes * pilotePrice)
                 .setScale(2, RoundingMode.HALF_UP);
     }
 

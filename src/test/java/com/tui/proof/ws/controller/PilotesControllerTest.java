@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -23,6 +24,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,6 +46,9 @@ public class PilotesControllerTest {
     private int port;
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @Value("${price}")
+    private Double price;
 
     @AfterEach
     public void truncateTables() {
@@ -104,7 +110,11 @@ public class PilotesControllerTest {
         assertEquals(address.getCountry(), body.getDeliveryAddress().getCountry());
         assertEquals(address.getPostcode(), body.getDeliveryAddress().getPostcode());
         assertEquals(address.getStreet(), body.getDeliveryAddress().getStreet());
-        assertEquals(19.95, body.getOrderTotal(), 0);
+
+        BigDecimal expectedPrice = BigDecimal.valueOf(createOrderRequestRequest.getNumberOfPilotes() * price)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        assertEquals(expectedPrice.doubleValue(), body.getOrderTotal(), 0);
 
     }
 
@@ -171,7 +181,11 @@ public class PilotesControllerTest {
         assertEquals((Integer) clientWhoPlaceOrder.getClientId(), updateResponseBody.getClient().getClientId());
         assertEquals((Integer)address.getAddressId(), updateResponseBody.getDeliveryAddress().getAddressId());
         assertEquals((int) updateOrderRequest.getNumberOfPilotes(), updateResponseBody.getPilotes());
-        assertEquals(13.3, updateResponseBody.getOrderTotal(), 0);
+
+        BigDecimal expectedPrice = BigDecimal.valueOf(updateOrderRequest.getNumberOfPilotes() * price)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        assertEquals(expectedPrice.doubleValue(), updateResponseBody.getOrderTotal(), 0);
 
     }
 
